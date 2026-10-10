@@ -66,26 +66,10 @@ function documentedPathsMatching(template: string): string[] {
  * kDrive under /3/drive). Each is a known gap, not a verified route: it is
  * listed here so that the suite stays green on what is known and goes red the
  * day a listed route becomes documented — that is the moment to verify it and
- * take it off the list.
+ * take it off the list. The mail routes were in this list until 2026-10-10,
+ * when they were rewritten on the documented ones and checked live.
  */
 export const UNDOCUMENTED_ROUTES: ReadonlySet<string> = new Set([
-  // The mail family, 15 routes, none of them documented: the API has them under
-  // /1/mail_hostings/{id}/mailboxes/{name}/... (see the next commit).
-  "GET /1/mail",
-  "GET /1/mail/${mailId}",
-  "GET /1/mail/${mailId}/mailbox",
-  "GET /1/mail/${mailId}/mailbox/${mailboxId}",
-  "POST /1/mail/${mailId}/mailbox",
-  "PUT /1/mail/${mailId}/mailbox/${mailboxId}",
-  "DELETE /1/mail/${mailId}/mailbox/${mailboxId}",
-  "POST /1/mail/${mailId}/mailbox/${mailboxId}/alias",
-  "DELETE /1/mail/${mailId}/mailbox/${mailboxId}/alias/${encodeURIComponent(alias)}",
-  "GET /1/mail/${mailId}/redirection",
-  "POST /1/mail/${mailId}/redirection",
-  "DELETE /1/mail/${mailId}/redirection/${redirectionId}",
-  "GET /1/mail/${mailId}/mailbox/${mailboxId}/autoresponder",
-  "PUT /1/mail/${mailId}/mailbox/${mailboxId}/autoresponder",
-  "GET /1/mail/${mailId}/mailbox/${mailboxId}/folder",
   "DELETE /1/domain/${domain}/dns/record/${recordId}",
   "DELETE /1/web/${hostingId}/cron/${cronId}",
   "DELETE /1/web/${hostingId}/database/${dbId}",
