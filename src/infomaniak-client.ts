@@ -7,6 +7,8 @@
  * Rate Limit: 60 requests per minute
  */
 
+import { pathSegment } from './path-segment.js';
+
 export interface InfomaniakConfig {
   token: string;
   baseUrl?: string;
@@ -318,9 +320,6 @@ export interface Product {
 /** Site creation is slow on the API side (it can exceed 30s). */
 const CREATE_SITE_TIMEOUT_MS = 120_000;
 
-/** A value that travels as one path segment, and cannot leave it. */
-const seg = (value: string | number): string => encodeURIComponent(String(value));
-
 class TokenBucket {
   private tokens: number;
   private lastRefill: number;
@@ -499,23 +498,23 @@ export class InfomaniakClient {
   }
 
   async getDomain(accountId: number, domain: string): Promise<ApiResponse<Domain>> {
-    return this.request<ApiResponse<Domain>>('GET', `/1/domain/account/${accountId}/domain/${domain}`);
+    return this.request<ApiResponse<Domain>>('GET', `/1/domain/account/${accountId}/domain/${pathSegment(domain)}`);
   }
 
   async getDomainNameservers(domain: string): Promise<ApiResponse<DomainNameserver[]>> {
-    return this.request<ApiResponse<DomainNameserver[]>>('GET', `/1/domain/${domain}/nameserver`);
+    return this.request<ApiResponse<DomainNameserver[]>>('GET', `/1/domain/${pathSegment(domain)}/nameserver`);
   }
 
   async updateDomainNameservers(domain: string, nameservers: DomainNameserver[]): Promise<ApiResponse<void>> {
-    return this.request<ApiResponse<void>>('PUT', `/1/domain/${domain}/nameserver`, { nameservers });
+    return this.request<ApiResponse<void>>('PUT', `/1/domain/${pathSegment(domain)}/nameserver`, { nameservers });
   }
 
   async renewDomain(domain: string, duration: number): Promise<ApiResponse<void>> {
-    return this.request<ApiResponse<void>>('POST', `/1/domain/${domain}/renew`, { duration });
+    return this.request<ApiResponse<void>>('POST', `/1/domain/${pathSegment(domain)}/renew`, { duration });
   }
 
   async getDnsRecords(domain: string): Promise<ApiResponse<DnsRecord[]>> {
-    return this.request<ApiResponse<DnsRecord[]>>('GET', `/1/domain/${domain}/dns/record`);
+    return this.request<ApiResponse<DnsRecord[]>>('GET', `/1/domain/${pathSegment(domain)}/dns/record`);
   }
 
   async createDnsRecord(domain: string, record: {
@@ -525,7 +524,7 @@ export class InfomaniakClient {
     ttl?: number;
     priority?: number;
   }): Promise<ApiResponse<DnsRecord>> {
-    return this.request<ApiResponse<DnsRecord>>('POST', `/1/domain/${domain}/dns/record`, record);
+    return this.request<ApiResponse<DnsRecord>>('POST', `/1/domain/${pathSegment(domain)}/dns/record`, record);
   }
 
   async updateDnsRecord(domain: string, recordId: number, record: {
@@ -535,11 +534,11 @@ export class InfomaniakClient {
     ttl?: number;
     priority?: number;
   }): Promise<ApiResponse<DnsRecord>> {
-    return this.request<ApiResponse<DnsRecord>>('PUT', `/1/domain/${domain}/dns/record/${recordId}`, record);
+    return this.request<ApiResponse<DnsRecord>>('PUT', `/1/domain/${pathSegment(domain)}/dns/record/${recordId}`, record);
   }
 
   async deleteDnsRecord(domain: string, recordId: number): Promise<ApiResponse<void>> {
-    return this.request<ApiResponse<void>>('DELETE', `/1/domain/${domain}/dns/record/${recordId}`);
+    return this.request<ApiResponse<void>>('DELETE', `/1/domain/${pathSegment(domain)}/dns/record/${recordId}`);
   }
 
   // Mail — on the documented routes: a mail service is a *mail hosting*, a
@@ -557,7 +556,7 @@ export class InfomaniakClient {
   }
 
   async getMailbox(mailHostingId: number, mailboxName: string): Promise<ApiResponse<Mailbox>> {
-    return this.request<ApiResponse<Mailbox>>('GET', `/1/mail_hostings/${mailHostingId}/mailboxes/${seg(mailboxName)}`);
+    return this.request<ApiResponse<Mailbox>>('GET', `/1/mail_hostings/${mailHostingId}/mailboxes/${pathSegment(mailboxName)}`);
   }
 
   async createMailbox(mailHostingId: number, mailbox: {
@@ -577,31 +576,31 @@ export class InfomaniakClient {
     authorized_senders?: string[];
     blocked_senders?: string[];
   }): Promise<ApiResponse<Mailbox>> {
-    return this.request<ApiResponse<Mailbox>>('PATCH', `/1/mail_hostings/${mailHostingId}/mailboxes/${seg(mailboxName)}`, changes);
+    return this.request<ApiResponse<Mailbox>>('PATCH', `/1/mail_hostings/${mailHostingId}/mailboxes/${pathSegment(mailboxName)}`, changes);
   }
 
   async deleteMailbox(mailHostingId: number, mailboxName: string): Promise<ApiResponse<boolean>> {
-    return this.request<ApiResponse<boolean>>('DELETE', `/1/mail_hostings/${mailHostingId}/mailboxes/${seg(mailboxName)}`);
+    return this.request<ApiResponse<boolean>>('DELETE', `/1/mail_hostings/${mailHostingId}/mailboxes/${pathSegment(mailboxName)}`);
   }
 
   async getMailboxAliases(mailHostingId: number, mailboxName: string): Promise<ApiResponse<MailboxAliases>> {
-    return this.request<ApiResponse<MailboxAliases>>('GET', `/1/mail_hostings/${mailHostingId}/mailboxes/${seg(mailboxName)}/aliases`);
+    return this.request<ApiResponse<MailboxAliases>>('GET', `/1/mail_hostings/${mailHostingId}/mailboxes/${pathSegment(mailboxName)}/aliases`);
   }
 
   async addMailboxAlias(mailHostingId: number, mailboxName: string, alias: string): Promise<ApiResponse<boolean>> {
-    return this.request<ApiResponse<boolean>>('POST', `/1/mail_hostings/${mailHostingId}/mailboxes/${seg(mailboxName)}/aliases`, { alias });
+    return this.request<ApiResponse<boolean>>('POST', `/1/mail_hostings/${mailHostingId}/mailboxes/${pathSegment(mailboxName)}/aliases`, { alias });
   }
 
   async deleteMailboxAlias(mailHostingId: number, mailboxName: string, alias: string): Promise<ApiResponse<boolean>> {
-    return this.request<ApiResponse<boolean>>('DELETE', `/1/mail_hostings/${mailHostingId}/mailboxes/${seg(mailboxName)}/aliases/${seg(alias)}`);
+    return this.request<ApiResponse<boolean>>('DELETE', `/1/mail_hostings/${mailHostingId}/mailboxes/${pathSegment(mailboxName)}/aliases/${pathSegment(alias)}`);
   }
 
   async getMailboxForwarding(mailHostingId: number, mailboxName: string): Promise<ApiResponse<MailboxForwarding>> {
-    return this.request<ApiResponse<MailboxForwarding>>('GET', `/1/mail_hostings/${mailHostingId}/mailboxes/${seg(mailboxName)}/forwarding_addresses`);
+    return this.request<ApiResponse<MailboxForwarding>>('GET', `/1/mail_hostings/${mailHostingId}/mailboxes/${pathSegment(mailboxName)}/forwarding_addresses`);
   }
 
   async addMailboxForwarding(mailHostingId: number, mailboxName: string, redirectAddress: string): Promise<ApiResponse<boolean>> {
-    return this.request<ApiResponse<boolean>>('POST', `/1/mail_hostings/${mailHostingId}/mailboxes/${seg(mailboxName)}/forwarding_addresses`, { redirect_address: redirectAddress });
+    return this.request<ApiResponse<boolean>>('POST', `/1/mail_hostings/${mailHostingId}/mailboxes/${pathSegment(mailboxName)}/forwarding_addresses`, { redirect_address: redirectAddress });
   }
 
   async updateMailboxForwarding(mailHostingId: number, mailboxName: string, changes: {
@@ -610,11 +609,11 @@ export class InfomaniakClient {
     has_dont_deliver?: boolean;
     has_forward_spam?: boolean;
   }): Promise<ApiResponse<boolean>> {
-    return this.request<ApiResponse<boolean>>('PUT', `/1/mail_hostings/${mailHostingId}/mailboxes/${seg(mailboxName)}/forwarding_addresses`, changes);
+    return this.request<ApiResponse<boolean>>('PUT', `/1/mail_hostings/${mailHostingId}/mailboxes/${pathSegment(mailboxName)}/forwarding_addresses`, changes);
   }
 
   async deleteMailboxForwarding(mailHostingId: number, mailboxName: string): Promise<ApiResponse<boolean>> {
-    return this.request<ApiResponse<boolean>>('DELETE', `/1/mail_hostings/${mailHostingId}/mailboxes/${seg(mailboxName)}/forwarding_addresses`);
+    return this.request<ApiResponse<boolean>>('DELETE', `/1/mail_hostings/${mailHostingId}/mailboxes/${pathSegment(mailboxName)}/forwarding_addresses`);
   }
 
   async getRedirections(mailHostingId: number): Promise<ApiResponse<EmailRedirection[]>> {
@@ -626,7 +625,7 @@ export class InfomaniakClient {
   }
 
   async deleteRedirection(mailHostingId: number, redirectionId: string): Promise<ApiResponse<boolean>> {
-    return this.request<ApiResponse<boolean>>('DELETE', `/1/mail_hostings/${mailHostingId}/redirections/${seg(redirectionId)}`);
+    return this.request<ApiResponse<boolean>>('DELETE', `/1/mail_hostings/${mailHostingId}/redirections/${pathSegment(redirectionId)}`);
   }
 
   async getAutoReplies(mailHostingId: number): Promise<ApiResponse<AutoReply[]>> {
@@ -662,7 +661,7 @@ export class InfomaniakClient {
   }
 
   async getMailboxFolders(mailHostingId: number, mailboxName: string): Promise<ApiResponse<MailboxFolders>> {
-    return this.request<ApiResponse<MailboxFolders>>('GET', `/1/mail_hostings/${mailHostingId}/mailboxes/${seg(mailboxName)}/auth/folders`);
+    return this.request<ApiResponse<MailboxFolders>>('GET', `/1/mail_hostings/${mailHostingId}/mailboxes/${pathSegment(mailboxName)}/auth/folders`);
   }
 
   // Web Hosting
