@@ -52,12 +52,12 @@
   },
   "homepage": "https://github.com/daniviber/infomaniak_mcp#readme",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.26.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "imapflow": "2.4.0",
     "postal-mime": "4.0.8",
-    "zod": "^3.25.76"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

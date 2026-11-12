@@ -4,13 +4,23 @@
 
 import { z } from 'zod';
 
+/**
+ * Error option for a field that must be present: a missing field reports
+ * "<name> is required", any other type error keeps zod's default message.
+ */
+export function required(name: string) {
+  return {
+    error: (issue: { input?: unknown }) => (issue.input === undefined ? `${name} is required` : undefined),
+  };
+}
+
 // Common schemas
 export const AccountIdSchema = z.object({
-  account_id: z.number({ required_error: 'account_id is required' }).positive('account_id must be positive'),
+  account_id: z.number(required('account_id')).positive('account_id must be positive'),
 });
 
 export const DomainNameSchema = z.object({
-  domain: z.string({ required_error: 'domain is required' }).min(1, 'domain cannot be empty'),
+  domain: z.string(required('domain')).min(1, 'domain cannot be empty'),
 });
 
 // DNS Record schemas
@@ -20,16 +30,16 @@ export const ListDnsRecordsSchema = DomainNameSchema;
 
 export const CreateDnsRecordSchema = z.object({
   domain: z.string().min(1, 'domain is required'),
-  source: z.string({ required_error: 'source is required' }),
+  source: z.string(required('source')),
   type: DnsRecordTypeSchema,
-  target: z.string({ required_error: 'target is required' }).min(1, 'target cannot be empty'),
+  target: z.string(required('target')).min(1, 'target cannot be empty'),
   ttl: z.number().min(60).max(86400).optional(),
   priority: z.number().min(0).max(65535).optional(),
 });
 
 export const UpdateDnsRecordSchema = z.object({
   domain: z.string().min(1, 'domain is required'),
-  record_id: z.number({ required_error: 'record_id is required' }).positive(),
+  record_id: z.number(required('record_id')).positive(),
   source: z.string().optional(),
   type: DnsRecordTypeSchema.optional(),
   target: z.string().min(1).optional(),
@@ -39,7 +49,7 @@ export const UpdateDnsRecordSchema = z.object({
 
 export const DeleteDnsRecordSchema = z.object({
   domain: z.string().min(1, 'domain is required'),
-  record_id: z.number({ required_error: 'record_id is required' }).positive(),
+  record_id: z.number(required('record_id')).positive(),
 });
 
 // Domain schemas
@@ -50,12 +60,12 @@ export const GetDomainSchema = z.object({
 
 // Web Hosting schemas
 export const HostingIdSchema = z.object({
-  hosting_id: z.number({ required_error: 'hosting_id is required' }).positive(),
+  hosting_id: z.number(required('hosting_id')).positive(),
 });
 
 export const SiteIdSchema = z.object({
   hosting_id: z.number().positive(),
-  site_id: z.number({ required_error: 'site_id is required' }).positive(),
+  site_id: z.number(required('site_id')).positive(),
 });
 
 // The API expects `domain` and `directory`. `fqdn` and `path` are accepted as
@@ -95,12 +105,12 @@ export const DeleteSiteSchema = SiteIdSchema;
 // Database schemas
 export const DatabaseIdSchema = z.object({
   hosting_id: z.number().positive(),
-  database_id: z.number({ required_error: 'database_id is required' }).positive(),
+  database_id: z.number(required('database_id')).positive(),
 });
 
 export const CreateDatabaseSchema = z.object({
   hosting_id: z.number().positive(),
-  name: z.string({ required_error: 'name is required' }).min(1, 'database name cannot be empty'),
+  name: z.string(required('name')).min(1, 'database name cannot be empty'),
   charset: z.string().optional(),
 });
 
@@ -108,41 +118,41 @@ export const DeleteDatabaseSchema = DatabaseIdSchema;
 
 // kDrive schemas
 export const DriveIdSchema = z.object({
-  drive_id: z.number({ required_error: 'drive_id is required' }).positive(),
+  drive_id: z.number(required('drive_id')).positive(),
 });
 
 // Swiss Backup schemas
 export const BackupIdSchema = z.object({
-  backup_id: z.number({ required_error: 'backup_id is required' }).positive(),
+  backup_id: z.number(required('backup_id')).positive(),
 });
 
 // VPS schemas
 export const VpsIdSchema = z.object({
-  vps_id: z.number({ required_error: 'vps_id is required' }).positive(),
+  vps_id: z.number(required('vps_id')).positive(),
 });
 
 // Dedicated Server schemas
 export const ServerIdSchema = z.object({
-  server_id: z.number({ required_error: 'server_id is required' }).positive(),
+  server_id: z.number(required('server_id')).positive(),
 });
 
 // Certificate schemas
 export const CertificateIdSchema = z.object({
-  certificate_id: z.number({ required_error: 'certificate_id is required' }).positive(),
+  certificate_id: z.number(required('certificate_id')).positive(),
 });
 
 // Invoice schemas
 export const InvoiceIdSchema = z.object({
   account_id: z.number().positive(),
-  invoice_id: z.number({ required_error: 'invoice_id is required' }).positive(),
+  invoice_id: z.number(required('invoice_id')).positive(),
 });
 
 // Generic API call schema
 export const ApiCallSchema = z.object({
   method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']),
-  endpoint: z.string({ required_error: 'endpoint is required' }).startsWith('/', 'endpoint must start with /'),
-  body: z.record(z.unknown()).optional(),
-  query_params: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
+  endpoint: z.string(required('endpoint')).startsWith('/', 'endpoint must start with /'),
+  body: z.record(z.string(), z.unknown()).optional(),
+  query_params: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
 });
 
 // Domain extras
@@ -164,13 +174,13 @@ export const RenewDomainSchema = z.object({
 // Cron jobs
 export const CronJobIdSchema = z.object({
   hosting_id: z.number().positive(),
-  cron_id: z.number({ required_error: 'cron_id is required' }).positive(),
+  cron_id: z.number(required('cron_id')).positive(),
 });
 
 export const CreateCronJobSchema = z.object({
   hosting_id: z.number().positive(),
-  command: z.string({ required_error: 'command is required' }).min(1),
-  schedule: z.string({ required_error: 'schedule is required' }).min(1),
+  command: z.string(required('command')).min(1),
+  schedule: z.string(required('schedule')).min(1),
   description: z.string().optional(),
 });
 
@@ -185,13 +195,13 @@ export const UpdateCronJobSchema = z.object({
 // FTP accounts
 export const FtpAccountIdSchema = z.object({
   hosting_id: z.number().positive(),
-  ftp_id: z.number({ required_error: 'ftp_id is required' }).positive(),
+  ftp_id: z.number(required('ftp_id')).positive(),
 });
 
 export const CreateFtpAccountSchema = z.object({
   hosting_id: z.number().positive(),
-  login: z.string({ required_error: 'login is required' }).min(1),
-  password: z.string({ required_error: 'password is required' }).min(8),
+  login: z.string(required('login')).min(1),
+  password: z.string(required('password')).min(8),
   home_directory: z.string().optional(),
 });
 
@@ -216,25 +226,25 @@ export const ListKDriveFilesSchema = z.object({
 
 export const SearchKDriveFilesSchema = z.object({
   drive_id: z.number().positive(),
-  query: z.string({ required_error: 'query is required' }).min(1),
+  query: z.string(required('query')).min(1),
 });
 
 export const CreateKDriveDirectorySchema = z.object({
   drive_id: z.number().positive(),
-  name: z.string({ required_error: 'name is required' }).min(1),
+  name: z.string(required('name')).min(1),
   parent_id: z.number().positive().optional(),
 });
 
 export const MoveOrCopyKDriveFileSchema = z.object({
   drive_id: z.number().positive(),
   file_id: z.number().positive(),
-  destination_directory_id: z.number({ required_error: 'destination_directory_id is required' }).positive(),
+  destination_directory_id: z.number(required('destination_directory_id')).positive(),
 });
 
 export const RenameKDriveFileSchema = z.object({
   drive_id: z.number().positive(),
   file_id: z.number().positive(),
-  name: z.string({ required_error: 'name is required' }).min(1),
+  name: z.string(required('name')).min(1),
 });
 
 export const ShareKDriveFileSchema = z.object({
@@ -275,26 +285,26 @@ export const KDriveFileVersionsSchema = z.object({
 
 // kChat schemas
 export const KChatTeamIdSchema = z.object({
-  team_id: z.string({ required_error: 'team_id is required' }).min(1),
+  team_id: z.string(required('team_id')).min(1),
 });
 
 export const KChatChannelIdSchema = z.object({
-  channel_id: z.string({ required_error: 'channel_id is required' }).min(1),
+  channel_id: z.string(required('channel_id')).min(1),
 });
 
 export const KChatPostIdSchema = z.object({
-  post_id: z.string({ required_error: 'post_id is required' }).min(1),
+  post_id: z.string(required('post_id')).min(1),
 });
 
 export const CreateKChatPostSchema = z.object({
-  channel_id: z.string({ required_error: 'channel_id is required' }).min(1),
-  message: z.string({ required_error: 'message is required' }).min(1),
+  channel_id: z.string(required('channel_id')).min(1),
+  message: z.string(required('message')).min(1),
   root_id: z.string().optional(),
 });
 
 export const SearchKChatPostsSchema = z.object({
-  team_id: z.string({ required_error: 'team_id is required' }).min(1),
-  terms: z.string({ required_error: 'terms is required' }).min(1),
+  team_id: z.string(required('team_id')).min(1),
+  terms: z.string(required('terms')).min(1),
   is_or_search: z.boolean().optional(),
 });
 
@@ -303,7 +313,7 @@ export const CreateKChatDirectChannelSchema = z.object({
 });
 
 export const SearchKChatUsersSchema = z.object({
-  term: z.string({ required_error: 'term is required' }).min(1),
+  term: z.string(required('term')).min(1),
 });
 
 export const ListKChatUsersSchema = z.object({
@@ -312,7 +322,7 @@ export const ListKChatUsersSchema = z.object({
 });
 
 export const KChatGetChannelPostsSchema = z.object({
-  channel_id: z.string({ required_error: 'channel_id is required' }).min(1),
+  channel_id: z.string(required('channel_id')).min(1),
   page: z.number().int().min(0).optional(),
   per_page: z.number().int().min(1).max(200).optional(),
 });
@@ -321,7 +331,7 @@ export const KChatGetChannelPostsSchema = z.object({
 export function validate<S extends z.ZodTypeAny>(schema: S, data: unknown): z.output<S> {
   const result = schema.safeParse(data);
   if (!result.success) {
-    const errors = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+    const errors = result.error.issues.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
     throw new Error(`Validation error: ${errors}`);
   }
   return result.data;

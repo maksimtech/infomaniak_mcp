@@ -17,6 +17,7 @@
 import express, { Express, NextFunction, Request, Response } from "express";
 import cors from "cors";
 import { createHash, randomUUID, timingSafeEqual } from "crypto";
+import { Server } from "http";
 import { isIPv4 } from "net";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { localhostHostValidation } from "@modelcontextprotocol/sdk/server/middleware/hostHeaderValidation.js";
@@ -80,6 +81,25 @@ export function assertSafeHttpOptions(options: HttpServerOptions): void {
   }
 }
 
+/**
+ * Headers sent on every response. The server only returns JSON and SSE, so
+ * nothing may be framed, sniffed, cached or used to load other resources.
+ */
+const SECURITY_HEADERS: Readonly<Record<string, string>> = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+  "Referrer-Policy": "no-referrer",
+  "Cache-Control": "no-store",
+};
+
+function securityHeaders(_req: Request, res: Response, next: NextFunction): void {
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    res.setHeader(name, value);
+  }
+  next();
+}
+
 function tokensMatch(provided: string, expected: string): boolean {
   // Hash both values so the comparison is constant-time regardless of length.
   const a = createHash("sha256").update(provided).digest();
@@ -124,6 +144,10 @@ export function createHttpApp(
   const activeSessions = new Map<string, StreamableHTTPServerTransport>();
 
   const app = express();
+  app.disable("x-powered-by");
+
+  // First, so that error responses from the checks below carry them too.
+  app.use(securityHeaders);
 
   // Without a token, a loopback server is protected from browsers only by the
   // Host header check (DNS rebinding protection).
@@ -299,12 +323,13 @@ export function createHttpApp(
  * @param client - The Infomaniak API client
  * @param options - HTTP server configuration options
  * @param kchatClient - Optional kChat API client
+ * @returns The listening server
  */
 export async function startHttpServer(
   client: InfomaniakClient,
   options: HttpServerOptions = {},
   kchatClient?: KChatClient | null,
-): Promise<void> {
+): Promise<Server> {
   assertSafeHttpOptions(options);
 
   const port = options.port ?? 3000;
@@ -313,8 +338,8 @@ export async function startHttpServer(
 
   const app = createHttpApp(client, options, kchatClient);
 
-  await new Promise<void>((resolve, reject) => {
-    app.listen(port, host, (error?: Error) => {
+  return new Promise<Server>((resolve, reject) => {
+    const server = app.listen(port, host, (error?: Error) => {
       if (error) {
         reject(error);
         return;
@@ -323,7 +348,7 @@ export async function startHttpServer(
       console.error(`Mode: ${stateless ? "stateless" : "stateful"}`);
       console.error(`Authentication: ${options.authToken ? "bearer token" : "none (loopback only)"}`);
       console.error(`Health check: http://${host}:${port}/health`);
-      resolve();
+      resolve(server);
     });
   });
 }
