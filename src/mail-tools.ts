@@ -12,15 +12,15 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { InfomaniakClient } from "./infomaniak-client.js";
-import { validate } from "./schemas.js";
+import { required, validate } from "./schemas.js";
 
 // ── schemas ──────────────────────────────────────────────────────────────────
 
-const mailHostingId = z.number({ required_error: "mail_hosting_id is required" }).int().positive();
+const mailHostingId = z.number(required("mail_hosting_id")).int().positive();
 // The username part of an address: no "@", no "/", nothing that would leave
 // the path segment it is sent in.
 const mailboxName = z
-  .string({ required_error: "mailbox_name is required" })
+  .string(required("mailbox_name"))
   .min(1, "mailbox_name cannot be empty")
   .regex(/^[A-Za-z0-9._+-]+$/, "mailbox_name is the part before the @ (letters, digits, . _ + -)");
 const email = z.string().email();
@@ -66,7 +66,7 @@ export const MailboxAliasSchema = z.object({
   mail_hosting_id: mailHostingId,
   mailbox_name: mailboxName,
   alias: z
-    .string({ required_error: "alias is required" })
+    .string(required("alias"))
     .min(1, "alias cannot be empty")
     .regex(/^[A-Za-z0-9._+-]+$/, "alias is the part before the @ (letters, digits, . _ + -)"),
 });
@@ -88,13 +88,13 @@ export const UpdateMailboxForwardingSchema = z.object({
 
 export const CreateRedirectionSchema = z.object({
   mail_hosting_id: mailHostingId,
-  name: z.string({ required_error: "name is required" }).min(1),
+  name: z.string(required("name")).min(1),
   targets: z.array(email).min(1, "at least one target address is required"),
 });
 
 export const RedirectionIdSchema = z.object({
   mail_hosting_id: mailHostingId,
-  redirection_id: z.string({ required_error: "redirection_id is required" }).min(1),
+  redirection_id: z.string(required("redirection_id")).min(1),
 });
 
 const autoReplyFields = {
@@ -109,8 +109,8 @@ const autoReplyFields = {
 
 export const CreateAutoReplySchema = z.object({
   mail_hosting_id: mailHostingId,
-  name: z.string({ required_error: "name is required" }).min(1),
-  message: z.string({ required_error: "message is required" }).min(1),
+  name: z.string(required("name")).min(1),
+  message: z.string(required("message")).min(1),
   is_recurrent: z.boolean().default(false),
   started_at: autoReplyFields.started_at,
   ended_at: autoReplyFields.ended_at,
@@ -120,7 +120,7 @@ export const CreateAutoReplySchema = z.object({
 
 export const AutoReplyIdSchema = z.object({
   mail_hosting_id: mailHostingId,
-  auto_reply_id: z.number({ required_error: "auto_reply_id is required" }).int().positive(),
+  auto_reply_id: z.number(required("auto_reply_id")).int().positive(),
 });
 
 export const UpdateAutoReplySchema = AutoReplyIdSchema.extend(autoReplyFields);

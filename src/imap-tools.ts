@@ -24,7 +24,7 @@ import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ImapFlow } from "imapflow";
 import PostalMime from "postal-mime";
 import { z } from "zod";
-import { validate } from "./schemas.js";
+import { required, validate } from "./schemas.js";
 
 export interface ImapConfig {
   host: string;
@@ -80,7 +80,7 @@ export const SearchMailMessagesSchema = z.object({
 
 export const GetMailMessageSchema = z.object({
   folder,
-  uid: z.number({ required_error: "uid is required" }).int().positive(),
+  uid: z.number(required("uid")).int().positive(),
   max_chars: z.number().int().min(1).max(100_000).optional(),
 });
 
