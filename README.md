@@ -143,6 +143,7 @@ The HTTP server can act on your Infomaniak account with the server's API token, 
 - By default it listens on `127.0.0.1` only. Requests whose `Host` header is not `localhost`, `127.0.0.1` or `[::1]` are rejected, to protect against DNS rebinding.
 - To listen on another interface (e.g. `MCP_HOST=0.0.0.0` in a container or on a cloud platform), set `MCP_AUTH_TOKEN`. The server refuses to start on a non-loopback host without it. Clients must then send `Authorization: Bearer <token>` on every `/mcp` request. Use a long random value, e.g. `openssl rand -hex 32`, and serve the endpoint over HTTPS.
 - CORS is disabled by default. Set `MCP_CORS_ORIGINS` to the origins of the browser-based clients you use.
+- Every response carries `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`, `Referrer-Policy: no-referrer` and `Cache-Control: no-store`, and no `X-Powered-By`.
 
 ```bash
 # Remote / cloud deployment
