@@ -5,11 +5,13 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import request from "supertest";
 import { InfomaniakClient } from "../infomaniak-client.js";
+import { AddressInfo } from "net";
 import {
   assertSafeHttpOptions,
   createHttpApp,
   HttpServerOptions,
   isLoopbackHost,
+  startHttpServer,
 } from "./http.js";
 
 // Mock the transport so no real MCP session is started
@@ -315,6 +317,56 @@ describe("HTTP Transport", () => {
 
       expect(response.status).toBe(200);
     });
+  });
+});
+
+describe("Security headers", () => {
+  function expectSecurityHeaders(response: request.Response) {
+    expect(response.headers["x-content-type-options"]).toBe("nosniff");
+    expect(response.headers["x-frame-options"]).toBe("DENY");
+    expect(response.headers["content-security-policy"]).toBe("default-src 'none'; frame-ancestors 'none'");
+    expect(response.headers["referrer-policy"]).toBe("no-referrer");
+    expect(response.headers["cache-control"]).toBe("no-store");
+    expect(response.headers["x-powered-by"]).toBeUndefined();
+  }
+
+  it("should be sent on /health", async () => {
+    expectSecurityHeaders(await request(app()).get("/health"));
+  });
+
+  it("should be sent on /mcp", async () => {
+    const response = await request(app())
+      .post("/mcp")
+      .set("Accept", "application/json, text/event-stream")
+      .send(initializeRequest);
+
+    expect(response.status).toBe(200);
+    expectSecurityHeaders(response);
+  });
+
+  it("should be sent when the bearer token is rejected", async () => {
+    const response = await request(app({ authToken: TOKEN })).post("/mcp").send(initializeRequest);
+
+    expect(response.status).toBe(401);
+    expectSecurityHeaders(response);
+  });
+
+  it("should be sent when the Host header is rejected", async () => {
+    const response = await request(app()).get("/health").set("Host", "evil.example.com");
+
+    expect(response.status).toBe(403);
+    expectSecurityHeaders(response);
+  });
+});
+
+describe("startHttpServer", () => {
+  it("should listen on 127.0.0.1 when no host is configured", async () => {
+    const server = await startHttpServer(client, { port: 0 });
+    try {
+      expect((server.address() as AddressInfo).address).toBe("127.0.0.1");
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 });
 
