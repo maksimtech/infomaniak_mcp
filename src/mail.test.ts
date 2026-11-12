@@ -202,6 +202,21 @@ describe("names that would leave their path segment", () => {
     await client.getMailbox(100001, "odd name").catch(() => undefined);
     expect(last().path).toBe(`${H}/mailboxes/odd%20name`);
   });
+
+  it("a dot segment is refused before any request", async () => {
+    // "." and ".." pass the name patterns and survive encodeURIComponent, and
+    // fetch resolves them: DELETE .../mailboxes/.. would reach the mail hosting.
+    const calls: Array<[string, Record<string, unknown>]> = [
+      ["infomaniak_get_mailbox", { mail_hosting_id: 100001, mailbox_name: "." }],
+      ["infomaniak_delete_mailbox", { mail_hosting_id: 100001, mailbox_name: ".." }],
+      ["infomaniak_delete_mailbox_alias", { mail_hosting_id: 100001, mailbox_name: "info", alias: ".." }],
+      ["infomaniak_delete_email_redirection", { mail_hosting_id: 100001, redirection_id: ".." }],
+    ];
+    for (const [tool, args] of calls) {
+      await expect(handleMailTool(client, tool, args), tool).rejects.toThrow(/path segment/);
+    }
+    expect(replay.requests).toHaveLength(0);
+  });
 });
 
 describe("the tool list", () => {
